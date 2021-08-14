@@ -262,6 +262,54 @@ app.get('/movieidlist', (req, res)=> {
 	} 
 )
 
+app.post('/userratelist', async (req, res) => {
+    console.log(`Someone request by user rate list`);    
+    let mapForPost = req.body
+    if (mapForPost.authkey === undefined || mapForPost.authkey === null ) { 
+      console.log('No auth key provided')
+      res.status(400).send({"status": 400, "description": 'No auth key provided'})
+      return
+    } 
+    console.log('auth key: ' + mapForPost.authkey)
+    let mapUserFound = await findUserComment(mapForPost.authkey) 
+    console.log(`mapUserFound's issuccess: ${mapUserFound.issuccess}`)
+    if (mapUserFound.issuccess === false ) {
+      res.status(400).send({"status": 400, "description": mapUserFound.errmsg})
+      return
+    }
+    console.log(`mapUserFound's isexist: ${mapUserFound.isexist}`)
+    if (mapUserFound.isexist === false ) {
+      res.status(400).send({"status": 400, "description": "User Not Exist"})
+      return
+    }
+    let lstrate = mapUserFound.rate
+    res.send({"status": 200, "list": lstrate})
+  }
+)
+
+app.post('/userbookmarklist', async (req, res) => {
+  console.log(`Someone request by user bookmark list`);    
+    let mapForPost = req.body
+    if (mapForPost.authkey === undefined || mapForPost.authkey === null ) { 
+      console.log('No auth key provided')
+      res.status(400).send({"status": 400, "description": 'No auth key provided'})
+      return
+    } 
+    console.log('auth key: ' + mapForPost.authkey)
+    let mapUserFound = await findUserComment(mapForPost.authkey) 
+    console.log(`mapUserFound's issuccess: ${mapUserFound.issuccess}`)
+    if (mapUserFound.issuccess === false ) {
+      res.status(400).send({"status": 400, "description": mapUserFound.errmsg})
+      return
+    }
+    console.log(`mapUserFound's isexist: ${mapUserFound.isexist}`)
+    if (mapUserFound.isexist === false ) {
+      res.status(400).send({"status": 400, "description": "User Not Exist"})
+      return
+    }
+    res.send({"status": 200, "list": mapUserFound.bookmark})
+})
+
 app.get('/movielist', (req, res)=> {
   console.log(`Someone request all movie(s)`)
   mongoClient.connect(CONNECTION_URI, 
