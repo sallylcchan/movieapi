@@ -175,7 +175,7 @@ app.post('/addmovie', async (req, res) => {
       collection.insertOne(mapForPost, (err, resp) => {
         if(err) {
           console.log('error: \n' + err)
-          res.status(500).send({"status":500, "description":err})          
+          res.status(500).send({"status":500, "description":err})
         } else {
           respdata = {
             "status": 201,
@@ -183,9 +183,9 @@ app.post('/addmovie', async (req, res) => {
             "imdbid": mapForPost.imdbid,
             "title": mapForPost.title
           }
-          res.status(201).send(respdata)
-          db.close()
+          res.status(201).send(respdata)          
         }
+        db.close()
       })      
     }
   })
@@ -231,12 +231,73 @@ app.delete('/deletemovie', async (req, res) => {
             "description": "Data deleted successfully",
             "imdbid": mapForPost.imdbid
           }
-          res.status(201).send(respdata)
-          db.close()
+          res.status(201).send(respdata)          
         }
+        db.close()
       })      
     }
   })
+})
+
+app.put('/updatemovie', async (req, res) => {
+  //start...
+  console.log('someone going to update the movie')
+  //check posted body
+  let mapForPost = req.body
+  if (mapForPost.imdbid === undefined || mapForPost.imdbid === null ) {   
+	console.log('No imdbid provided')
+    res.status(401).send({"status": 401, "description": 'No imdbid provided'})
+    return
+  }
+  console.log('imdbid: ' + mapForPost.imdbid)
+  //check whether imdbid is exist
+  let mapMovieFound = await findImdbidExist(mapForPost.imdbid)
+  console.log(`mapMovieFound's issuccess: ${mapMovieFound.issuccess}`)
+  if (mapMovieFound.issuccess === false ) {
+    res.status(400).send({"status": 400, "description": mapMovieFound.errmsg})
+    return
+  }
+  console.log(`mapMovieFound's isexist: ${mapMovieFound.isexist}`)
+  if (mapMovieFound.isexist === false ) {
+    res.status(400).send({"status": 400, "description": "Movie Not Exist"})
+    return
+  }  
+  //check user's role
+  if (mapForPost.role !== 'staff') {
+    console.log('Not authorized to update movie!')
+    res.status(400).send({"status": 400, "description": 'Not authorized to update movie!'})
+    return
+  }
+  //connect to mongodb
+  mongoClient.connect(CONNECTION_URI,
+    (err, db) => {
+    if(err){
+      console.log(err)
+      res.status(500).send({"status": 500, "description": err})
+    } else {
+      const collection = db.db(DATABASE_NAME).collection(MOVIESCOLLECTION)
+      //only title, year, type + modifieddt required 
+	  //imdbid and poster link would not be edited by staff
+      const obj = {
+        title : mapForPost.title,
+        year : mapForPost.year,
+        imdbid : mapForPost.imdbid,
+        type : mapForPost.type,
+        modifieddt : new Date()
+      }
+      collection.findOneAndUpdate({'imdbid': mapForPost.imdbid},
+        {$set: obj},
+        {},
+        (err) => {
+          if(err) {
+            res.status(500).send({"status":500, "description":err})
+          } else {
+            res.status(201).send({"status":201, "description":`Movie data (${mapForPost.imdbid}) update successfully`})
+          }
+          db.close()
+        })      
+    }
+  }) 
 })
 
 app.get('/movieidlist', (req, res)=> {
@@ -324,7 +385,6 @@ app.get('/movielist', (req, res)=> {
           res.status(500).send({"status":500, "description":err})
         } else {
           res.send(result)
-
         }
         db.close()
       })    
@@ -381,9 +441,9 @@ app.post('/applyuser', async (req, res)=>{
             "authkey": mapForPost.authkey,
             "role": mapForPost.role 
           }
-          res.status(201).send(respdata)
-          db.close()
+          res.status(201).send(respdata)          
         }
+        db.close()
       })      
     }
   })
@@ -418,8 +478,8 @@ app.post('/login', (req, res)=>{
             res.status(500).send({"status":500, "description":err})
           } else {
             res.send(result[0])
-            db.close()
           }
+          db.close()
         })      
     }
   }) 
@@ -506,8 +566,8 @@ app.put('/bookmarkmovie', async (req, res)=>{
             res.status(500).send({"status":500, "description":err})
           } else {
             res.status(201).send({"status":201, "description":"Bookmark data update successfully"})
-            db.close()
           }
+          db.close()
         })      
     }
   }) 
@@ -580,8 +640,8 @@ app.put('/ratemovie', async (req, res)=>{
             res.status(500).send({"status":500, "description":err})
           } else {
             res.status(201).send({"status":201, "description":"Rate data update successfully"})
-            db.close()
           }
+          db.close()
         })      
     }
   }) 
